@@ -26,7 +26,7 @@ ASSIGN
 		(st = ncs) 						: {req,ncs};
 		(st = req) & (other-st = cs) 				: wait;
 		(st = req) & (other-st = ncs) 				: cs;
-		(st = wait) & (other-st = ncs) & (rel = TRUE)		: cs;
+		(st = wait) & (other-st = wait) & (rel = TRUE) & (turn =myturn)		: cs;
 		(st = c) 						: {c,n};
 		TRUE 							: st;
 	esac;
