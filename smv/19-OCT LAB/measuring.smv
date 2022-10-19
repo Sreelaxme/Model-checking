@@ -1,0 +1,28 @@
+MODULE main
+	VAR
+		small	: 0..3;
+		big	: 0..5;
+		
+
+	ASSIGN
+		init(small) 	:= 0;
+		init(big) 	:= 0;
+	next(small) := case
+		0 			: case 
+						big<4 : {big,0,3};
+						TRUE  : {0,3};
+					esac;
+		3 : {0,3};
+		TRUE : case (big+small<4)  : {big+small, 0,3 };
+
+	
+	
+
+
+
+	
+	FAIRNESS running
+	
+	
+	
+	

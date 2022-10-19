@@ -1,0 +1,55 @@
+MODULE main
+VAR
+	pr1: process prc(pr2.st, pr2.b, k, FALSE);
+	pr2: process prc(pr1.st, pr1.b, k, TRUE);
+	k  : boolean;
+ASSIGN
+	init(k) := FALSE;
+-- safety
+LTLSPEC G!((pr1.st = cs) & (pr2.st = cs))
+LTLSPEC G ((pr1.st = req) -> F(pr1.st = cs))
+LTLSPEC G ((pr2.st = req) -> F(pr2.st = cs))
+LTLSPEC F(G!((pr1.st = wait) & (pr2.st = wait)))
+
+
+
+
+--strict sequencing 
+
+LTLSPEC G((pr1.st = cs) -> (G((pr1.st = cs) | ((pr1.st = cs) U ((!(pr1.st = cs)) & (G(!(pr1.st = cs)) | ((!(pr1.st = cs)) U (pr2.st = cs)) ))  ))))
+
+--no strict
+	
+
+CTLSPEC EF ((pr1.st = cs) & E[(pr1.st = cs) U (!(pr1.st = cs) & E[!(pr2.st = cs) U (pr1.st = cs)])])
+MODULE prc(other-st, other-b,k, myk)
+VAR
+	st: {ncs,req,wait,cs,rel};
+	b : boolean;
+ASSIGN
+	init(st) := ncs;
+	init(b)  := FALSE;
+	next(st) :=
+	case
+		(st = ncs)                        		: {ncs,req};
+		(st = req) 				: wait;
+		(st = wait) &  (myk != k)			: wait;
+		(st = wait) & (myk = k)				: cs;
+		(st = cs) 					: {cs,rel};
+		(st = rel)					: ncs;
+		TRUE 						: st;
+		
+	esac;
+	next(k) :=
+	case
+		(st = wait) & (k = myk) & (other-b = FALSE)	: !k;
+		TRUE 						: k;
+	esac;
+	next(b) :=
+	case
+		(st = req)					: FALSE;
+		(st = rel)					: TRUE;
+		TRUE						: b;
+	esac;
+FAIRNESS running
+FAIRNESS !(st = cs)
