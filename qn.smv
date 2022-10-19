@@ -1,39 +1,45 @@
 MODULE main
 VAR
-	pr1: process prc(pr2.st, turn, FALSE);
-	pr2: process prc(pr1.st, turn, TRUE);
-	turn: boolean;
+	pr1: process prc(pr2.st, pr2.b, k, FALSE);
+	pr2: process prc(pr1.st, pr1.b, k, TRUE);
+	k  : boolean;
 ASSIGN
-	init(turn) := FALSE;
+	init(k) := FALSE;
 -- safety
-LTLSPEC G!((pr1.st = c) & (pr2.st = c))
+LTLSPEC G!((pr1.st = cs) & (pr2.st = cs))
+LTLSPEC G ((pr1.st = req) -> F(pr1.st = cs))
+LTLSPEC G ((pr2.st = req) -> F(pr2.st = cs))
+LTLSPEC F(G!((pr1.st = wait) & (pr2.st = wait)))
 
--- liveness
-LTLSPEC G((pr1.st = t) -> F (pr1.st = c))
-LTLSPEC G((pr2.st = t) -> F (pr2.st = c))
 
--- ‘negation’ of strict sequencing (desired to be false)
-LTLSPEC G(pr1.st=c ->(G pr1.st=c | (pr1.st=c U
-(!(pr1.st=c) & G !(pr1.st=c) | (!(pr1.st=c) U pr2.st=c)))))
 
-MODULE prc(other-st, turn, myturn)
+MODULE prc(other-st, other-b,k, myk)
 VAR
 	st: {ncs,req,wait,cs,rel};
+	b : boolean;
 ASSIGN
 	init(st) := ncs;
+	init(b)  := FALSE;
 	next(st) :=
 	case
-		(st = ncs) 						: {req,ncs};
-		(st = req) & (other-st = cs) 				: wait;
-		(st = req) & (other-st = ncs) 				: cs;
-		(st = wait) & (other-st = wait) & (rel = TRUE) & (turn =myturn)		: cs;
-		(st = c) 						: {c,n};
-		TRUE 							: st;
+		(st = ncs)                        		: {ncs,req};
+		(st = wait) &  (myk = TRUE)			: wait;
+		(st = wait) & (myk = FALSE)			: cs;
+		(st = cs) 					: {cs,rel};
+		(st = rel)					: ncs;
+		TRUE 						: st;
+		
 	esac;
-	next(turn) :=
+	next(k) :=
 	case
-		turn = myturn & st=c					: !turn;
-		TRUE							: turn;
+		(st = wait) & (k = myk) & (other-b = TRUE)	: !k;
+		TRUE 						: k;
+	esac;
+	next(b) :=
+	case
+		(st = req)					: FALSE;
+		(st = rel)					: TRUE;
+		TRUE						: b;
 	esac;
 FAIRNESS running
-FAIRNESS !(st = c)
+FAIRNESS !(st = cs)
