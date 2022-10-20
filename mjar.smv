@@ -1,0 +1,40 @@
+MODULE main
+VAR
+    small : 0..3;
+    big : 0..5;
+    st : {initi,fillsmall,fillbig,poursmall,pourbig,empytsmall,emptybig};
+
+ASSIGN 
+    init(small) := 0;
+    init(big) := 0;
+    init(st) := initi;
+
+next(st) :=
+case
+    TRUE : {fillsmall,fillbig,poursmall,pourbig,empytsmall,emptybig};
+esac;
+
+next(small) :=
+case
+    (next(st)=fillsmall) : 3;
+    (next(st)=empytsmall) : 0;
+    (next(st)=pourbig) & ( (big+small) <=3) : (big+small);
+    (next(st)=pourbig) & ( (big+small) >3) : 3;
+    (next(st)=poursmall) & ( (big+small) <=5) : 0;
+    (next(st)=poursmall) & ( (big+small) >5) : small - (5-big) ;
+    TRUE : small;
+esac;
+
+next(big) := 
+case
+    (next(st)=fillbig) : 5;
+    (next(st)=emptybig) : 0;
+    (next(st)=poursmall) & ( (big+small)<=5) : (big+small);
+    (next(st)=poursmall) & ((big+small)>5) : 5;
+    (next(st)=pourbig) & ((big+small)<=3) : 0;
+    (next(st)=pourbig) & ((big+small)>3) : big - (3-small) ;
+    TRUE : big;
+esac;
+
+-- check big=4
+LTLSPEC G(big!=4)
